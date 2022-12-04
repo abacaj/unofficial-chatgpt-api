@@ -9,6 +9,12 @@ async function main() {
 
     const m2 = await gpt.chat('who created you?');
     console.log(m2.message.content.parts);
+
+    // reset conversation
+    gpt.resetThread();
+
+    const m3 = await gpt.chat("what's your name?");
+    console.log(m3.message.content.parts);
   } catch (ex) {
     console.error(ex);
   }
