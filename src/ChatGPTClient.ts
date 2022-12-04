@@ -1,25 +1,57 @@
-const https = require('https');
-const crypto = require('crypto');
+import https from 'https';
+import crypto from 'crypto';
 const sseSubstring = 'data: '.length;
 
-/**
- * @returns {Promise<string[]>}
- */
-function post(url, data, bearerToken) {
+type PayloadMessage = {
+  id: string;
+  role: string;
+  content: { content_type: string; parts: string[] };
+};
+
+type Payload = {
+  action: string;
+  messages: PayloadMessage[];
+  parent_message_id: string;
+  model: string;
+  conversationId?: string;
+};
+
+type Response = {
+  message: {
+    id: string;
+    role: string;
+    user: any;
+    create_time: any;
+    update_time: any;
+    content: { content_type: string; parts: string[] };
+    end_turn: any;
+    weight: number;
+    metadata: {};
+    recipient: string;
+  };
+  conversation_id: string;
+  error: any;
+};
+
+function post(
+  url: string,
+  data: Record<string, unknown>,
+  bearerToken: string,
+): Promise<string[]> {
   return new Promise((resolve, reject) => {
     const req = https.request(
       url,
       {
-        'content-type': 'application/json',
         method: 'POST',
         headers: {
+          'content-type': 'application/json',
           authorization: 'Bearer ' + bearerToken,
         },
       },
       (res) => {
         res.setEncoding('utf-8');
 
-        const streamData = [];
+        const streamData: string[] = [];
         if (res.statusCode !== 200) {
           return reject(new Error(res.statusMessage));
         }
@@ -36,19 +68,16 @@ function post(url, data, bearerToken) {
   });
 }
 
-class ChatGPTClient {
-  #conversationId = null;
-  #bearerToken = null;
+export class ChatGPTClient {
+  #conversationId: string | null = null;
+  #bearerToken: string;
 
-  constructor(bearerToken) {
+  constructor(bearerToken: string) {
     this.#bearerToken = bearerToken;
   }
 
-  /**
-   * @returns {Promise<{message: {id: string,role: string,user: any,create_time: any,update_time: any,content: { content_type: string, parts: string[] },end_turn: any,weight: number,metadata: {},recipient: string }, conversation_id: string, error: any}>}
-   */
-  async chat(message) {
-    const payload = {
+  async chat(message: string): Promise<Response> {
+    const payload: Payload = {
       action: 'next',
       messages: [
         {
@@ -79,5 +108,3 @@ class ChatGPTClient {
     this.#conversationId = null;
   }
 }
-
-module.exports = ChatGPTClient;

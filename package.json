@@ -1,11 +1,27 @@
 {
   "name": "unofficial-chatgpt-api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "An unofficial API for chatgpt",
+  "main": "build/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": "16"
+  },
+  "keywords": [
+    "chatgpt",
+    "gpt",
+    "gpt api",
+    "chatgpt api"
+  ],
   "scripts": {
+    "prepublish": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Anton Bacaj <abacaj1@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@tsconfig/node16": "^1.0.3",
+    "@types/node": "^18.11.10",
+    "typescript": "^4.9.3"
+  }
 }
