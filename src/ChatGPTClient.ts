@@ -13,7 +13,7 @@ type Payload = {
   messages: PayloadMessage[];
   parent_message_id: string;
   model: string;
-  conversationId?: string;
+  conversation_id?: string;
 };
 
 type Response = {
@@ -92,7 +92,7 @@ export class ChatGPTClient {
 
     // add the convo id if we already have one started
     if (this.#conversationId) {
-      payload.conversationId = this.#conversationId;
+      payload.conversation_id = this.#conversationId;
     }
 
     const res = await post(
