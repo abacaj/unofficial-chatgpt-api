@@ -1,4 +1,4 @@
-const ChatGPTClient = require('./Client');
+const { ChatGPTClient } = require('unofficial-chatgpt-api');
 
 async function main() {
   const gpt = new ChatGPTClient('<---ENTER-TOKEN--->');
