@@ -8,7 +8,10 @@
     "strict": true,
     "skipLibCheck": true,
     "declaration": true,
-    "target": "es2018",
-    "outDir": "build"
+    "target": "es2021",
+    "outDir": "build",
+    "lib": ["es2021"],
+    "module": "commonjs",
+    "forceConsistentCasingInFileNames": true
   }
 }
