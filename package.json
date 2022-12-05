@@ -1,6 +1,6 @@
 {
   "name": "unofficial-chatgpt-api",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "repository": {
     "type": "git",
     "url": "https://github.com/abacaj/unofficial-chatgpt-api"
@@ -18,13 +18,14 @@
     "chatgpt api"
   ],
   "scripts": {
-    "prepublish": "tsc",
+    "prepublish": "rimraf ./build && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Anton Bacaj <abacaj1@gmail.com>",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^18.11.10",
+    "rimraf": "^3.0.2",
     "typescript": "^4.9.3"
   }
 }

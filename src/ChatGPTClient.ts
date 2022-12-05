@@ -1,6 +1,6 @@
 import https from 'https';
 import crypto from 'crypto';
-const sseSubstring = 'data: '.length;
+const sseSubstringLength = 'data: '.length;
 
 type PayloadMessage = {
   id: string;
@@ -37,26 +37,27 @@ function post(
   url: string,
   data: Record<string, unknown>,
   bearerToken: string,
-): Promise<string[]> {
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const req = https.request(
       url,
       {
         method: 'POST',
         headers: {
-          'content-type': 'application/json',
-          authorization: 'Bearer ' + bearerToken,
+          Accept: 'application/json',
+          Authorization: 'Bearer ' + bearerToken,
+          'Content-Type': 'application/json',
         },
       },
       (res) => {
         res.setEncoding('utf-8');
 
-        const streamData: string[] = [];
+        let streamData = '';
         if (res.statusCode !== 200) {
           return reject(new Error(res.statusMessage));
         }
 
-        res.on('data', (c) => streamData.push(c.substring(sseSubstring)));
+        res.on('data', (c) => (streamData += c));
         res.on('end', () => resolve(streamData));
       },
     );
@@ -70,10 +71,12 @@ function post(
 
 export class ChatGPTClient {
   #conversationId: string | null = null;
+  #parentId: string;
   #bearerToken: string;
 
   constructor(bearerToken: string) {
     this.#bearerToken = bearerToken;
+    this.#parentId = crypto.randomUUID();
   }
 
   async chat(message: string): Promise<Response> {
@@ -86,7 +89,7 @@ export class ChatGPTClient {
           content: { content_type: 'text', parts: [message] },
         },
       ],
-      parent_message_id: crypto.randomUUID(),
+      parent_message_id: this.#parentId,
       model: 'text-davinci-002-render',
     };
 
@@ -95,16 +98,25 @@ export class ChatGPTClient {
       payload.conversation_id = this.#conversationId;
     }
 
-    const res = await post(
+    const response = await post(
       'https://chat.openai.com/backend-api/conversation',
       payload,
       this.#bearerToken,
     );
 
-    return JSON.parse(res[res.length - 2]);
+    const sseMessages = response.split('\n').filter((s) => s.length);
+    const result = JSON.parse(
+      sseMessages[sseMessages.length - 2].substring(sseSubstringLength),
+    ) as Response;
+
+    this.#conversationId = result.conversation_id;
+    this.#parentId = result.message.id;
+
+    return result;
   }
 
   resetThread() {
     this.#conversationId = null;
+    this.#parentId = crypto.randomUUID();
   }
 }
