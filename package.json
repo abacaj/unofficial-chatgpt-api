@@ -1,11 +1,11 @@
 {
   "name": "unofficial-chatgpt-api",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/abacaj/unofficial-chatgpt-api"
   },
-  "description": "An unofficial API for chatgpt",
+  "description": "An unofficial API for ChatGPT, supports token auto-refresh, multiple conversations.",
   "main": "build/index.js",
   "type": "commonjs",
   "engines": {

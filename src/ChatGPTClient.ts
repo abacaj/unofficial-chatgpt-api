@@ -33,7 +33,27 @@ type Response = {
   error: any;
 };
 
+type AuthResponse = {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image: string;
+    picture: string;
+    groups: string[];
+    features: string[];
+  };
+  expires: string;
+  accessToken: string;
+};
+
+type Conversation = {
+  conversationId: string;
+  parentId: string;
+};
+
 function post(
+  ua: string,
   url: string,
   data: Record<string, unknown>,
   bearerToken: string,
@@ -47,7 +67,7 @@ function post(
           Accept: 'application/json',
           Authorization: 'Bearer ' + bearerToken,
           'Content-Type': 'application/json',
-          'User-Agent': `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 x-openai-assistant-app-id`,
+          'User-Agent': ua,
         },
       },
       (res) => {
@@ -70,17 +90,66 @@ function post(
   });
 }
 
-export class ChatGPTClient {
-  #conversationId: string | null = null;
+function get(
+  ua: string,
+  url: string,
+  sessionToken0: string,
+  sessionToken1: string,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const req = https.get(
+      url,
+      {
+        headers: {
+          cookie: `__Secure-next-auth.session-token.0=${sessionToken0}; __Secure-next-auth.session-token.1=${sessionToken1}`,
+          'User-Agent': ua,
+        },
+      },
+      (res) => {
+        res.setEncoding('utf-8');
+
+        let streamData = '';
+        if (res.statusCode !== 200) {
+          return reject(new Error(res.statusMessage));
+        }
+
+        res.on('data', (c) => (streamData += c));
+        res.on('end', () => resolve(streamData));
+      },
+    );
+
+    req.on('error', reject);
+  });
+}
+
+class ChatGPTConversation {
   #parentId: string;
   #bearerToken: string;
+  #ua: string;
+  #conversationId: string | null;
+  #refreshToken: () => Promise<string>;
 
-  constructor(bearerToken: string) {
+  constructor(
+    ua: string,
+    bearerToken: string,
+    refreshToken: () => Promise<string>,
+  ) {
+    this.#ua = ua;
+    this.#conversationId = null;
     this.#bearerToken = bearerToken;
     this.#parentId = crypto.randomUUID();
+    this.#refreshToken = refreshToken;
   }
 
-  async chat(message: string): Promise<Response> {
+  reset() {
+    this.#parentId = crypto.randomUUID();
+    this.#conversationId = null;
+  }
+
+  async chat(message: string) {
+    // refresh token, will return cached one if not expired
+    this.#bearerToken = await this.#refreshToken();
+
     const payload: Payload = {
       action: 'next',
       messages: [
@@ -94,12 +163,12 @@ export class ChatGPTClient {
       model: 'text-davinci-002-render',
     };
 
-    // add the convo id if we already have one started
     if (this.#conversationId) {
       payload.conversation_id = this.#conversationId;
     }
 
     const response = await post(
+      this.#ua,
       'https://chat.openai.com/backend-api/conversation',
       payload,
       this.#bearerToken,
@@ -115,9 +184,59 @@ export class ChatGPTClient {
 
     return result;
   }
+}
 
-  resetThread() {
-    this.#conversationId = null;
-    this.#parentId = crypto.randomUUID();
+export class ChatGPTClient {
+  #sessionToken0: string;
+  #sessionToken1: string;
+  #lastTokenRefresh: Date | null;
+  #bearerToken: string | null;
+  #ua =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 x-openai-assistant-app-id';
+
+  constructor(sessionToken0: string, sessionToken1: string) {
+    this.#sessionToken0 = sessionToken0;
+    this.#sessionToken1 = sessionToken1;
+    this.#bearerToken = null;
+    this.#lastTokenRefresh = null;
+  }
+
+  async startConversation(): Promise<ChatGPTConversation> {
+    await this.#refreshBearerToken();
+    if (!this.#bearerToken)
+      throw new Error('Session tokens are expired/invalid');
+
+    return new ChatGPTConversation(
+      this.#ua,
+      this.#bearerToken,
+      this.#refreshBearerToken.bind(this),
+    );
+  }
+
+  async #refreshBearerToken(): Promise<string> {
+    const now = new Date();
+    if (
+      this.#lastTokenRefresh &&
+      now < this.#lastTokenRefresh &&
+      this.#bearerToken
+    )
+      return this.#bearerToken;
+
+    const response = await get(
+      this.#ua,
+      'https://chat.openai.com/api/auth/session',
+      this.#sessionToken0,
+      this.#sessionToken1,
+    );
+
+    const json = JSON.parse(response) as AuthResponse;
+
+    if (json.accessToken) {
+      this.#lastTokenRefresh = new Date(json.expires);
+      this.#bearerToken = json.accessToken;
+      return json.accessToken;
+    }
+
+    throw new Error('Failed to refresh token, session expired/invalid');
   }
 }
