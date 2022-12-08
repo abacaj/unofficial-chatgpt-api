@@ -122,7 +122,7 @@ function get(
   });
 }
 
-class ChatGPTConversation {
+export class ChatGPTConversation {
   #parentId: string;
   #bearerToken: string;
   #ua: string;
