@@ -28,11 +28,10 @@ Library manages auto-refreshing tokens.
 To get the initial session tokens:
 
 1. Visit: https://chat.openai.com/chat
-2. Open network tab in chrome: find request to url https://chat.openai.com/api/auth/session
-3. Click on the request, click on cookies
-4. At the bottom it will say "Response Cookies"
-5. Copy the value of the first cookie and paste it in the client (Name: `__Secure-next-auth.session-token.0`)
-6. Copy the value of the second cookie and paste it in the client (Name: `__Secure-next-auth.session-token.1`)
+2. Open devtools in chrome: visit the application tab
+3. Click on cookies in the left under storage, click on the chat.openai.com domain
+4. Copy the value of the first cookie and paste it in the client (Name: `__Secure-next-auth.session-token.0`)
+5. Copy the value of the second cookie and paste it in the client (Name: `__Secure-next-auth.session-token.1`)
 
 ### Chatting
 
