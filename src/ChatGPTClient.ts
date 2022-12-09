@@ -191,12 +191,18 @@ export class ChatGPTClient {
   #sessionToken1: string;
   #lastTokenRefresh: Date | null;
   #bearerToken: string | null;
+  #refreshIntervalMinutes: number;
   #ua =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 x-openai-assistant-app-id';
 
-  constructor(sessionToken0: string, sessionToken1: string) {
+  constructor(
+    sessionToken0: string,
+    sessionToken1: string,
+    refreshIntervalMinutes = 15,
+  ) {
     this.#sessionToken0 = sessionToken0;
     this.#sessionToken1 = sessionToken1;
+    this.#refreshIntervalMinutes = refreshIntervalMinutes;
     this.#bearerToken = null;
     this.#lastTokenRefresh = null;
   }
@@ -232,7 +238,10 @@ export class ChatGPTClient {
     const json = JSON.parse(response) as AuthResponse;
 
     if (json.accessToken) {
-      this.#lastTokenRefresh = new Date(json.expires);
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + this.#refreshIntervalMinutes);
+
+      this.#lastTokenRefresh = now;
       this.#bearerToken = json.accessToken;
       return json.accessToken;
     }
