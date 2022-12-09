@@ -1,5 +1,6 @@
 import https from 'https';
 import crypto from 'crypto';
+import { IncomingHttpHeaders } from 'http';
 const sseSubstringLength = 'data: '.length;
 
 type PayloadMessage = {
@@ -95,7 +96,7 @@ function get(
   url: string,
   sessionToken0: string,
   sessionToken1: string,
-): Promise<string> {
+): Promise<{ body: string; headers: IncomingHttpHeaders }> {
   return new Promise((resolve, reject) => {
     const req = https.get(
       url,
@@ -114,7 +115,9 @@ function get(
         }
 
         res.on('data', (c) => (streamData += c));
-        res.on('end', () => resolve(streamData));
+        res.on('end', () =>
+          resolve({ body: streamData, headers: res.headers }),
+        );
       },
     );
 
@@ -195,10 +198,16 @@ export class ChatGPTClient {
   #ua =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 x-openai-assistant-app-id';
 
+  /**
+   *
+   * @param {string} sessionToken0 __Secure-next-auth.session-token.0
+   * @param {string} sessionToken1 __Secure-next-auth.session-token.1
+   * @param {number} refreshIntervalMinutes Defaults to 5 minutes
+   */
   constructor(
     sessionToken0: string,
     sessionToken1: string,
-    refreshIntervalMinutes = 15,
+    refreshIntervalMinutes = 5,
   ) {
     this.#sessionToken0 = sessionToken0;
     this.#sessionToken1 = sessionToken1;
@@ -235,17 +244,24 @@ export class ChatGPTClient {
       this.#sessionToken1,
     );
 
-    const json = JSON.parse(response) as AuthResponse;
+    const cookies = response.headers['set-cookie'];
+    const json = JSON.parse(response.body) as AuthResponse;
 
-    if (json.accessToken) {
-      const now = new Date();
-      now.setMinutes(now.getMinutes() + this.#refreshIntervalMinutes);
+    if (!json.accessToken || !cookies)
+      throw new Error('Failed to refresh token, session expired/invalid');
 
-      this.#lastTokenRefresh = now;
-      this.#bearerToken = json.accessToken;
-      return json.accessToken;
-    }
+    now.setMinutes(now.getMinutes() + this.#refreshIntervalMinutes);
+    const sessionTokens = cookies.filter((cookie) =>
+      cookie.startsWith('__Secure-next-auth.session-token'),
+    );
 
-    throw new Error('Failed to refresh token, session expired/invalid');
+    if (sessionTokens.length !== 2)
+      throw new Error('Failed to refresh dual session-tokens from headers');
+
+    this.#lastTokenRefresh = now;
+    this.#bearerToken = json.accessToken;
+    this.#sessionToken0 = sessionTokens[0];
+    this.#sessionToken1 = sessionTokens[1];
+    return json.accessToken;
   }
 }
