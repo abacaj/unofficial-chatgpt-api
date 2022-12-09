@@ -48,11 +48,6 @@ type AuthResponse = {
   accessToken: string;
 };
 
-type Conversation = {
-  conversationId: string;
-  parentId: string;
-};
-
 function post(
   ua: string,
   url: string,
