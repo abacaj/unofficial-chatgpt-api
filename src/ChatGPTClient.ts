@@ -187,7 +187,7 @@ export class ChatGPTConversation {
 }
 
 export class ChatGPTClient {
-  #logger: ChatGPTLogger;
+  #logger?: ChatGPTLogger;
   #sessionToken0: string;
   #sessionToken1: string;
   #lastTokenRefresh: Date | null;
@@ -206,7 +206,7 @@ export class ChatGPTClient {
     sessionToken0: string,
     sessionToken1: string,
     refreshIntervalMinutes = 5,
-    logger: ChatGPTLogger,
+    logger?: ChatGPTLogger,
   ) {
     this.#sessionToken0 = sessionToken0;
     this.#sessionToken1 = sessionToken1;
