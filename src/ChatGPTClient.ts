@@ -48,6 +48,8 @@ type AuthResponse = {
   accessToken: string;
 };
 
+export type ChatGPTLogger = (msg: string) => void;
+
 function post(
   ua: string,
   url: string,
@@ -185,6 +187,7 @@ export class ChatGPTConversation {
 }
 
 export class ChatGPTClient {
+  #logger: ChatGPTLogger;
   #sessionToken0: string;
   #sessionToken1: string;
   #lastTokenRefresh: Date | null;
@@ -203,12 +206,14 @@ export class ChatGPTClient {
     sessionToken0: string,
     sessionToken1: string,
     refreshIntervalMinutes = 5,
+    logger: ChatGPTLogger,
   ) {
     this.#sessionToken0 = sessionToken0;
     this.#sessionToken1 = sessionToken1;
     this.#refreshIntervalMinutes = refreshIntervalMinutes;
     this.#bearerToken = null;
     this.#lastTokenRefresh = null;
+    this.#logger = logger;
   }
 
   async startConversation(): Promise<ChatGPTConversation> {
@@ -257,6 +262,8 @@ export class ChatGPTClient {
     this.#bearerToken = json.accessToken;
     this.#sessionToken0 = sessionTokens[0];
     this.#sessionToken1 = sessionTokens[1];
+
+    this.#logger?.('ChatGPTClient: token refreshed at ' + now.toJSON());
     return json.accessToken;
   }
 }
