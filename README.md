@@ -1,5 +1,8 @@
 # unofficial-chatgpt-api
 
+![version](https://img.shields.io/npm/v/unofficial-chatgpt-api)
+![downloads](https://img.shields.io/npm/dw/unofficial-chatgpt-api)
+
 ## Getting Started
 
 ### Installation
