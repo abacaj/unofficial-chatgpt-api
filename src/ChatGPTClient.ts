@@ -144,18 +144,18 @@ export class ChatGPTConversation {
   #bearerToken: string;
   #ua: string;
   #conversationId: string | null;
-  #refreshToken: () => Promise<string>;
+  #refreshBearerToken: () => Promise<string>;
 
   constructor(
     ua: string,
     bearerToken: string,
-    refreshToken: () => Promise<string>,
+    refreshBearerToken: () => Promise<string>,
   ) {
     this.#ua = ua;
     this.#conversationId = null;
     this.#bearerToken = bearerToken;
     this.#parentId = crypto.randomUUID();
-    this.#refreshToken = refreshToken;
+    this.#refreshBearerToken = refreshBearerToken;
   }
 
   reset() {
@@ -165,7 +165,7 @@ export class ChatGPTConversation {
 
   async chat(message: string) {
     // refresh token, will return cached one if not expired
-    this.#bearerToken = await this.#refreshToken();
+    this.#bearerToken = await this.#refreshBearerToken();
 
     const payload: Payload = {
       action: 'next',
