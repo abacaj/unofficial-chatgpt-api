@@ -48,6 +48,12 @@ type AuthResponse = {
   accessToken: string;
 };
 
+export type ChatGPTOptions = {
+  sessionToken0: string;
+  sessionToken1?: string;
+  refreshIntervalMinutes?: number;
+};
+
 export type ChatGPTLogger = (msg: string) => void;
 
 function getSetCookieValue(setCookieValue: string) {
@@ -201,9 +207,9 @@ export class ChatGPTClient {
   #logger?: ChatGPTLogger;
   #sessionToken0: string;
   #sessionToken1?: string | null;
+  #refreshIntervalMinutes: number;
   #lastTokenRefresh: Date | null;
   #bearerToken: string | null;
-  #refreshIntervalMinutes: number;
   #ua =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 x-openai-assistant-app-id';
 
@@ -213,29 +219,24 @@ export class ChatGPTClient {
    * @param {string} sessionToken1 __Secure-next-auth.session-token.1
    * @param {number} refreshIntervalMinutes Defaults to 5 minutes
    */
-  constructor(
-    sessionToken0: string,
-    sessionToken1?: string,
-    refreshIntervalMinutes = 5,
-    logger?: ChatGPTLogger,
-  ) {
-    this.#sessionToken0 = sessionToken0;
-    this.#sessionToken1 = sessionToken1;
-    this.#refreshIntervalMinutes = refreshIntervalMinutes;
+  constructor(options: ChatGPTOptions, logger?: ChatGPTLogger) {
+    this.#sessionToken0 = options.sessionToken0;
+    this.#sessionToken1 = options.sessionToken1;
+    this.#refreshIntervalMinutes = options.refreshIntervalMinutes ?? 5;
     this.#bearerToken = null;
     this.#lastTokenRefresh = null;
     this.#logger = logger;
   }
 
   async startConversation(): Promise<ChatGPTConversation> {
-    await this.refreshBearerToken();
+    await this.#refreshBearerToken();
     if (!this.#bearerToken)
       throw new Error('Session tokens are expired/invalid');
 
     return new ChatGPTConversation(
       this.#ua,
       this.#bearerToken,
-      this.refreshBearerToken.bind(this),
+      this.#refreshBearerToken.bind(this),
     );
   }
 
@@ -250,11 +251,12 @@ export class ChatGPTClient {
     const json = JSON.parse(response.body) as AuthResponse;
 
     if (!json.accessToken || !cookies)
-      throw new Error('Failed to get cookies, session expired/invalid');
+      throw new Error('Failed to get new cookies, session expired/invalid');
 
     refreshDate.setMinutes(
       refreshDate.getMinutes() + this.#refreshIntervalMinutes,
     );
+
     const sessionTokens = cookies.filter((cookie) =>
       cookie.startsWith('__Secure-next-auth.session-token'),
     );
@@ -282,11 +284,12 @@ export class ChatGPTClient {
     const json = JSON.parse(response.body) as AuthResponse;
 
     if (!json.accessToken || !cookies)
-      throw new Error('Failed to get cookies, session expired/invalid');
+      throw new Error('Failed to get new cookies, session expired/invalid');
 
     refreshDate.setMinutes(
       refreshDate.getMinutes() + this.#refreshIntervalMinutes,
     );
+
     const sessionTokens = cookies.filter((cookie) =>
       cookie.startsWith('__Secure-next-auth.session-token'),
     );
@@ -303,7 +306,7 @@ export class ChatGPTClient {
     return json.accessToken;
   }
 
-  async refreshBearerToken(): Promise<string> {
+  async #refreshBearerToken(): Promise<string> {
     const now = new Date();
 
     if (

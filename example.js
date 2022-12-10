@@ -2,10 +2,9 @@ const assert = require('assert');
 const { ChatGPTClient } = require('unofficial-chatgpt-api');
 
 async function main() {
-  const gpt = new ChatGPTClient(
-    '<---SESSION_TOKEN_1--->',
-    '<---SESSION_TOKEN_2--->',
-  );
+  const gpt = new ChatGPTClient({
+    sessionToken0: '<--SESSION_TOKEN-->',
+  });
 
   try {
     const convo = await gpt.startConversation();
