@@ -240,13 +240,13 @@ export class ChatGPTClient {
     );
   }
 
-  async #singleTokenRefresh(refreshDate: Date) {
-    const response = await get(
-      this.#ua,
-      'https://chat.openai.com/api/auth/session',
-      this.#sessionToken0,
-    );
-
+  #parseCookie(
+    response: {
+      body: string;
+      headers: IncomingHttpHeaders;
+    },
+    refreshDate: Date,
+  ) {
     const cookies = response.headers['set-cookie'];
     const json = JSON.parse(response.body) as AuthResponse;
 
@@ -261,15 +261,30 @@ export class ChatGPTClient {
       cookie.startsWith('__Secure-next-auth.session-token'),
     );
 
+    return { sessionTokens, accessToken: json.accessToken };
+  }
+
+  async #singleTokenRefresh(refreshDate: Date) {
+    const response = await get(
+      this.#ua,
+      'https://chat.openai.com/api/auth/session',
+      this.#sessionToken0,
+    );
+
+    const { sessionTokens, accessToken } = this.#parseCookie(
+      response,
+      refreshDate,
+    );
+
     if (sessionTokens.length !== 1)
       throw new Error('Failed to refresh single session-tokens from headers');
 
     this.#lastTokenRefresh = refreshDate;
-    this.#bearerToken = json.accessToken;
+    this.#bearerToken = accessToken;
     this.#sessionToken0 = getSetCookieValue(sessionTokens[0]);
 
     this.#logger?.('ChatGPTClient: token refreshed at ' + refreshDate.toJSON());
-    return json.accessToken;
+    return accessToken;
   }
 
   async #dualTokenRefresh(refreshDate: Date) {
@@ -280,30 +295,21 @@ export class ChatGPTClient {
       this.#sessionToken1,
     );
 
-    const cookies = response.headers['set-cookie'];
-    const json = JSON.parse(response.body) as AuthResponse;
-
-    if (!json.accessToken || !cookies)
-      throw new Error('Failed to get new cookies, session expired/invalid');
-
-    refreshDate.setMinutes(
-      refreshDate.getMinutes() + this.#refreshIntervalMinutes,
-    );
-
-    const sessionTokens = cookies.filter((cookie) =>
-      cookie.startsWith('__Secure-next-auth.session-token'),
+    const { sessionTokens, accessToken } = this.#parseCookie(
+      response,
+      refreshDate,
     );
 
     if (sessionTokens.length !== 2)
       throw new Error('Failed to refresh dual session-tokens from headers');
 
     this.#lastTokenRefresh = refreshDate;
-    this.#bearerToken = json.accessToken;
+    this.#bearerToken = accessToken;
     this.#sessionToken0 = getSetCookieValue(sessionTokens[0]);
     this.#sessionToken1 = getSetCookieValue(sessionTokens[1]);
 
     this.#logger?.('ChatGPTClient: token refreshed at ' + refreshDate.toJSON());
-    return json.accessToken;
+    return accessToken;
   }
 
   async #refreshBearerToken(): Promise<string> {
