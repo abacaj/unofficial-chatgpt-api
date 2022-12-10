@@ -1,7 +1,8 @@
 # unofficial-chatgpt-api
 
-![version](https://img.shields.io/npm/v/unofficial-chatgpt-api)
-![downloads](https://img.shields.io/npm/dw/unofficial-chatgpt-api)
+[![version](https://img.shields.io/npm/v/unofficial-chatgpt-api)](https://www.npmjs.com/package/unofficial-chatgpt-api)
+[![downloads](https://img.shields.io/npm/dw/unofficial-chatgpt-api)](https://www.npmjs.com/package/unofficial-chatgpt-api)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/abacaj/unofficial-chatgpt-api/blob/main/LICENSE)
 
 ## Getting Started
 
