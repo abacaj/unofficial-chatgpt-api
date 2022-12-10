@@ -15,6 +15,7 @@ npm i unofficial-chatgpt-api
 ### Configuration
 
 ```js
+// dual token
 const { ChatGPTClient } = require('unofficial-chatgpt-api');
 const gpt = new ChatGPTClient(
   '<---SESSION_TOKEN_1--->',
@@ -22,16 +23,34 @@ const gpt = new ChatGPTClient(
 );
 ```
 
+```js
+// single token
+const { ChatGPTClient } = require('unofficial-chatgpt-api');
+const gpt = new ChatGPTClient('<---SESSION_TOKEN--->');
+```
+
 ### Auto-refresh
 
 Library manages auto-refreshing tokens.
-To get the initial session tokens:
+
+**Dual tokens**
+
+Some accounts require dual tokens:
 
 1. Visit: https://chat.openai.com/chat
 2. Open devtools in chrome: visit the application tab
 3. Click on cookies in the left under storage, click on the chat.openai.com domain
 4. Copy the value of the first cookie and paste it in the client (Name: `__Secure-next-auth.session-token.0`)
 5. Copy the value of the second cookie and paste it in the client (Name: `__Secure-next-auth.session-token.1`)
+
+**Single token**
+
+Some accounts require single token:
+
+1. Visit: https://chat.openai.com/chat
+2. Open devtools in chrome: visit the application tab
+3. Click on cookies in the left under storage, click on the chat.openai.com domain
+4. Copy the value of the first cookie and paste it in the client (Name: `__Secure-next-auth.session-token`)
 
 ### Chatting
 
