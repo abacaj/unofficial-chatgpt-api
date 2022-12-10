@@ -17,16 +17,18 @@ npm i unofficial-chatgpt-api
 ```js
 // dual token
 const { ChatGPTClient } = require('unofficial-chatgpt-api');
-const gpt = new ChatGPTClient(
-  '<---SESSION_TOKEN_1--->',
-  '<---SESSION_TOKEN_2--->',
-);
+const gpt = new ChatGPTClient({
+  sessionToken0: '<--SESSION_TOKEN_0-->',
+  sessionToken1: '<--SESSION_TOKEN_1-->',
+});
 ```
 
 ```js
 // single token
 const { ChatGPTClient } = require('unofficial-chatgpt-api');
-const gpt = new ChatGPTClient('<---SESSION_TOKEN--->');
+const gpt = new ChatGPTClient({
+  sessionToken0: '<--SESSION_TOKEN-->',
+});
 ```
 
 ### Auto-refresh
