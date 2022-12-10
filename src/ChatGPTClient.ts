@@ -50,6 +50,10 @@ type AuthResponse = {
 
 export type ChatGPTLogger = (msg: string) => void;
 
+function getSetCookieValue(setCookieValue: string) {
+  return setCookieValue.split('=')[1].split(';')[0];
+}
+
 function post(
   ua: string,
   url: string,
@@ -230,6 +234,7 @@ export class ChatGPTClient {
 
   async #refreshBearerToken(): Promise<string> {
     const now = new Date();
+
     if (
       this.#lastTokenRefresh &&
       now < this.#lastTokenRefresh &&
@@ -260,8 +265,8 @@ export class ChatGPTClient {
 
     this.#lastTokenRefresh = now;
     this.#bearerToken = json.accessToken;
-    this.#sessionToken0 = sessionTokens[0];
-    this.#sessionToken1 = sessionTokens[1];
+    this.#sessionToken0 = getSetCookieValue(sessionTokens[0]);
+    this.#sessionToken1 = getSetCookieValue(sessionTokens[1]);
 
     this.#logger?.('ChatGPTClient: token refreshed at ' + now.toJSON());
     return json.accessToken;
