@@ -49,11 +49,13 @@ type AuthResponse = {
 };
 
 type RefreshCallback = (updatedSession: {
+  clearanceToken: string;
   sessionToken0: string;
   sessionToken1?: string;
 }) => void;
 
 export type ChatGPTOptions = {
+  clearanceToken: string;
   sessionToken0: string;
   sessionToken1?: string;
   refreshIntervalMinutes?: number;
@@ -70,6 +72,7 @@ function post(
   ua: string,
   url: string,
   data: Record<string, unknown>,
+  clearanceToken: string,
   bearerToken: string,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -78,10 +81,11 @@ function post(
       {
         method: 'POST',
         headers: {
-          Accept: 'application/json',
-          Authorization: 'Bearer ' + bearerToken,
-          'Content-Type': 'application/json',
-          'User-Agent': ua,
+          accept: 'application/json',
+          cookie: `cf_clearance=${clearanceToken}`,
+          authorization: `Bearer ${bearerToken}`,
+          'content-type': 'application/json',
+          'user-agent': ua,
         },
       },
       (res) => {
@@ -107,23 +111,26 @@ function post(
 function get(
   ua: string,
   url: string,
+  clearanceToken: string,
   sessionToken0: string,
   sessionToken1?: string,
 ): Promise<{ body: string; headers: IncomingHttpHeaders }> {
   return new Promise((resolve, reject) => {
     let cookie = '';
     if (sessionToken1) {
-      cookie = `__Secure-next-auth.session-token.0=${sessionToken0}; __Secure-next-auth.session-token.1=${sessionToken1}`;
+      cookie = `cf_clearance=${clearanceToken}; __Secure-next-auth.session-token.0=${sessionToken0}; __Secure-next-auth.session-token.1=${sessionToken1}`;
     } else {
-      cookie = `__Secure-next-auth.session-token=${sessionToken0}`;
+      cookie = `cf_clearance=${clearanceToken}; __Secure-next-auth.session-token=${sessionToken0}`;
     }
 
     const req = https.get(
       url,
       {
         headers: {
-          cookie,
-          'User-Agent': ua,
+          'cache-control': 'no-cache',
+          cookie: cookie,
+          referer: 'https://chat.openai.com/chat',
+          'user-agent': ua,
         },
       },
       (res) => {
@@ -147,6 +154,7 @@ function get(
 
 export class ChatGPTConversation {
   #parentId: string;
+  #clearanceToken: string;
   #bearerToken: string;
   #ua: string;
   #conversationId: string | null;
@@ -154,11 +162,13 @@ export class ChatGPTConversation {
 
   constructor(
     ua: string,
+    clearanceToken: string,
     bearerToken: string,
     refreshBearerToken: () => Promise<string>,
   ) {
     this.#ua = ua;
     this.#conversationId = null;
+    this.#clearanceToken = clearanceToken;
     this.#bearerToken = bearerToken;
     this.#parentId = crypto.randomUUID();
     this.#refreshBearerToken = refreshBearerToken;
@@ -202,6 +212,7 @@ export class ChatGPTConversation {
       this.#ua,
       'https://chat.openai.com/backend-api/conversation',
       payload,
+      this.#clearanceToken,
       this.#bearerToken,
     );
 
@@ -219,6 +230,7 @@ export class ChatGPTConversation {
 
 export class ChatGPTClient {
   #logger?: ChatGPTLogger;
+  #clearanceToken: string;
   #onRefreshCallback?: RefreshCallback;
   #sessionToken0: string;
   #sessionToken1?: string;
@@ -226,7 +238,7 @@ export class ChatGPTClient {
   #lastTokenRefresh?: Date;
   #bearerToken?: string;
   #ua =
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 x-openai-assistant-app-id';
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36';
 
   /**
    *
@@ -235,6 +247,7 @@ export class ChatGPTClient {
    * @param {number} refreshIntervalMinutes Defaults to 5 minutes
    */
   constructor(options: ChatGPTOptions, logger?: ChatGPTLogger) {
+    this.#clearanceToken = options.clearanceToken;
     this.#sessionToken0 = options.sessionToken0;
     this.#sessionToken1 = options.sessionToken1;
     this.#onRefreshCallback = options.onRefreshCallback;
@@ -243,10 +256,12 @@ export class ChatGPTClient {
   }
 
   getCurrentSession(): {
+    clearanceToken: string;
     sessionToken0: string;
     sessionToken1?: string;
   } {
     return {
+      clearanceToken: this.#clearanceToken,
       sessionToken0: this.#sessionToken0,
       sessionToken1: this.#sessionToken1,
     };
@@ -259,6 +274,7 @@ export class ChatGPTClient {
 
     return new ChatGPTConversation(
       this.#ua,
+      this.#clearanceToken,
       this.#bearerToken,
       this.#refreshBearerToken.bind(this),
     );
@@ -292,6 +308,7 @@ export class ChatGPTClient {
     const response = await get(
       this.#ua,
       'https://chat.openai.com/api/auth/session',
+      this.#clearanceToken,
       this.#sessionToken0,
     );
 
@@ -315,6 +332,7 @@ export class ChatGPTClient {
     const response = await get(
       this.#ua,
       'https://chat.openai.com/api/auth/session',
+      this.#clearanceToken,
       this.#sessionToken0,
       this.#sessionToken1,
     );
@@ -354,6 +372,7 @@ export class ChatGPTClient {
     }
 
     this.#onRefreshCallback?.({
+      clearanceToken: this.#clearanceToken,
       sessionToken0: this.#sessionToken0,
       sessionToken1: this.#sessionToken1,
     });

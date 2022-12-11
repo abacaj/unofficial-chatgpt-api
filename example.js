@@ -3,6 +3,7 @@ const { ChatGPTClient } = require('unofficial-chatgpt-api');
 
 async function main() {
   const gpt = new ChatGPTClient({
+    clearanceToken: '<--BOT_CLEARANCE_TOKEN-->',
     sessionToken0: '<--SESSION_TOKEN-->',
   });
 
