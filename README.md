@@ -22,6 +22,7 @@ npm i unofficial-chatgpt-api
 // dual token
 const { ChatGPTClient } = require('unofficial-chatgpt-api');
 const gpt = new ChatGPTClient({
+  clearanceToken: '<--BOT_CLEARANCE_TOKEN-->',
   sessionToken0: '<--SESSION_TOKEN_0-->',
   sessionToken1: '<--SESSION_TOKEN_1-->',
 });
@@ -31,6 +32,7 @@ const gpt = new ChatGPTClient({
 // single token
 const { ChatGPTClient } = require('unofficial-chatgpt-api');
 const gpt = new ChatGPTClient({
+  clearanceToken: '<--BOT_CLEARANCE_TOKEN-->',
   sessionToken0: '<--SESSION_TOKEN-->',
 });
 ```
