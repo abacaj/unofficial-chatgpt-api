@@ -165,9 +165,10 @@ export class ChatGPTConversation {
     clearanceToken: string,
     bearerToken: string,
     refreshBearerToken: () => Promise<string>,
+    existingChatId?: string,
   ) {
     this.#ua = ua;
-    this.#conversationId = null;
+    this.#conversationId = existingChatId ?? null;
     this.#clearanceToken = clearanceToken;
     this.#bearerToken = bearerToken;
     this.#parentId = crypto.randomUUID();
@@ -267,7 +268,9 @@ export class ChatGPTClient {
     };
   }
 
-  async startConversation(): Promise<ChatGPTConversation> {
+  async startConversation(
+    existingChatId?: string,
+  ): Promise<ChatGPTConversation> {
     await this.#refreshBearerToken();
     if (!this.#bearerToken)
       throw new Error('Session tokens are expired/invalid');
@@ -277,6 +280,7 @@ export class ChatGPTClient {
       this.#clearanceToken,
       this.#bearerToken,
       this.#refreshBearerToken.bind(this),
+      existingChatId,
     );
   }
 
