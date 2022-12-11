@@ -1,6 +1,6 @@
 {
   "name": "unofficial-chatgpt-api",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/abacaj/unofficial-chatgpt-api"
@@ -18,8 +18,8 @@
     "chatgpt api"
   ],
   "scripts": {
-    "prepublish": "rimraf ./build && tsc",
-    "publish": "npm publish",
+    "build": "rimraf ./build && tsc",
+    "prepublishOnly": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Anton Bacaj <abacaj1@gmail.com>",

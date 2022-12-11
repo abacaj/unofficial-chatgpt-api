@@ -48,10 +48,16 @@ type AuthResponse = {
   accessToken: string;
 };
 
+type RefreshCallback = (updatedSession: {
+  sessionToken0: string;
+  sessionToken1?: string;
+}) => void;
+
 export type ChatGPTOptions = {
   sessionToken0: string;
   sessionToken1?: string;
   refreshIntervalMinutes?: number;
+  onRefreshCallback?: RefreshCallback;
 };
 
 export type ChatGPTLogger = (msg: string) => void;
@@ -102,7 +108,7 @@ function get(
   ua: string,
   url: string,
   sessionToken0: string,
-  sessionToken1?: string | null,
+  sessionToken1?: string,
 ): Promise<{ body: string; headers: IncomingHttpHeaders }> {
   return new Promise((resolve, reject) => {
     let cookie = '';
@@ -205,11 +211,12 @@ export class ChatGPTConversation {
 
 export class ChatGPTClient {
   #logger?: ChatGPTLogger;
+  #onRefreshCallback?: RefreshCallback;
   #sessionToken0: string;
-  #sessionToken1?: string | null;
+  #sessionToken1?: string;
   #refreshIntervalMinutes: number;
-  #lastTokenRefresh: Date | null;
-  #bearerToken: string | null;
+  #lastTokenRefresh?: Date;
+  #bearerToken?: string;
   #ua =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 x-openai-assistant-app-id';
 
@@ -222,10 +229,19 @@ export class ChatGPTClient {
   constructor(options: ChatGPTOptions, logger?: ChatGPTLogger) {
     this.#sessionToken0 = options.sessionToken0;
     this.#sessionToken1 = options.sessionToken1;
+    this.#onRefreshCallback = options.onRefreshCallback;
     this.#refreshIntervalMinutes = options.refreshIntervalMinutes ?? 5;
-    this.#bearerToken = null;
-    this.#lastTokenRefresh = null;
     this.#logger = logger;
+  }
+
+  getCurrentSession(): {
+    sessionToken0: string;
+    sessionToken1?: string;
+  } {
+    return {
+      sessionToken0: this.#sessionToken0,
+      sessionToken1: this.#sessionToken1,
+    };
   }
 
   async startConversation(): Promise<ChatGPTConversation> {
@@ -322,10 +338,18 @@ export class ChatGPTClient {
     )
       return this.#bearerToken;
 
+    let token;
     if (this.#sessionToken1) {
-      return await this.#dualTokenRefresh(now);
+      token = await this.#dualTokenRefresh(now);
     } else {
-      return await this.#singleTokenRefresh(now);
+      token = await this.#singleTokenRefresh(now);
     }
+
+    this.#onRefreshCallback?.({
+      sessionToken0: this.#sessionToken0,
+      sessionToken1: this.#sessionToken1,
+    });
+
+    return token;
   }
 }
