@@ -169,6 +169,14 @@ export class ChatGPTConversation {
     this.#conversationId = null;
   }
 
+  /**
+   *
+   * @description conversationId can be null if the conversation has not been started yet with a call to chat first
+   */
+  getConversationId() {
+    return this.#conversationId;
+  }
+
   async chat(message: string) {
     // refresh token, will return cached one if not expired
     this.#bearerToken = await this.#refreshBearerToken();
