@@ -268,6 +268,21 @@ export class ChatGPTClient {
     };
   }
 
+  /**
+   *
+   * @description this will force a refresh to update bearer token
+   */
+  updateClientSession(
+    clearanceToken: string,
+    sessionToken0: string,
+    sessionToken1?: string,
+  ) {
+    this.#clearanceToken = clearanceToken;
+    this.#sessionToken0 = sessionToken0;
+    this.#sessionToken1 = sessionToken1;
+    this.#refreshBearerToken(true);
+  }
+
   async startConversation(
     existingChatId?: string,
   ): Promise<ChatGPTConversation> {
@@ -358,13 +373,14 @@ export class ChatGPTClient {
     return accessToken;
   }
 
-  async #refreshBearerToken(): Promise<string> {
+  async #refreshBearerToken(force?: boolean): Promise<string> {
     const now = new Date();
 
     if (
       this.#lastTokenRefresh &&
       now < this.#lastTokenRefresh &&
-      this.#bearerToken
+      this.#bearerToken &&
+      !force
     )
       return this.#bearerToken;
 
