@@ -58,6 +58,7 @@ export type ChatGPTOptions = {
   clearanceToken: string;
   sessionToken0: string;
   sessionToken1?: string;
+  userAgent?: string;
   refreshIntervalMinutes?: number;
   onRefreshCallback?: RefreshCallback;
 };
@@ -238,8 +239,7 @@ export class ChatGPTClient {
   #refreshIntervalMinutes: number;
   #lastTokenRefresh?: Date;
   #bearerToken?: string;
-  #ua =
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36';
+  #ua: string;
 
   /**
    *
@@ -248,6 +248,9 @@ export class ChatGPTClient {
    * @param {number} refreshIntervalMinutes Defaults to 5 minutes
    */
   constructor(options: ChatGPTOptions, logger?: ChatGPTLogger) {
+    this.#ua =
+      options.userAgent ??
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36';
     this.#clearanceToken = options.clearanceToken;
     this.#sessionToken0 = options.sessionToken0;
     this.#sessionToken1 = options.sessionToken1;
