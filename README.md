@@ -6,6 +6,10 @@
 
 ## Getting Started
 
+## NOTICE
+This library may or may not still work, ChatGPT has antibot measures in place and managing the session requires browsers.
+If you want to do this without a browser see here: https://twitter.com/abacaj/status/1602905680654094336
+
 ### Installation
 
 To use ChatGPT in your application, run:
