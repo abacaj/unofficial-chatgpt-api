@@ -97,8 +97,12 @@ function post(
           return reject(new Error(res.statusMessage));
         }
 
-        res.on('data', (c) => (streamData += c));
-        res.on('end', () => resolve(streamData));
+        res.on('data', (chunk) => {
+          streamData += chunk;
+        });
+        res.on('end', () => {
+          resolve(streamData);
+        });
       },
     );
 
@@ -142,10 +146,12 @@ function get(
           return reject(new Error(res.statusMessage));
         }
 
-        res.on('data', (c) => (streamData += c));
-        res.on('end', () =>
-          resolve({ body: streamData, headers: res.headers }),
-        );
+        res.on('data', (chunk) => {
+          streamData += chunk;
+        });
+        res.on('end', () => {
+          resolve({ body: streamData, headers: res.headers });
+        });
       },
     );
 
